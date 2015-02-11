@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/packages
+/RssImageEncloser/bin
+/RssImageEncloser/obj
+/RssImageEncloser.sln.ide
+*.suo
+*.user
+/RssImageEncloser/Properties/PublishProfiles
