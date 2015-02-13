@@ -18,6 +18,12 @@ namespace RssImageEncloser
                 url: "c/{*rssUrl}",
                 defaults: new { controller = "Convert", action = "Index" }
             );
+
+            routes.MapRoute(
+                name: "RedditFeed",
+                url: "r/{subredditName}",
+                defaults: new { controller = "Convert", action = "RedditFeed" }
+            );
         }
     }
 }
