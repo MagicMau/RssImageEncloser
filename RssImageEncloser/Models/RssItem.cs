@@ -20,7 +20,13 @@ namespace RssImageEncloser.Models
         {
             return string.Format(
                 @"<item title=""{0}"" link=""{1}"" description=""{2}"" date=""{3}"" image=""{4}"" type=""{5}"" thumbnail=""{6}"" />",
-                Title, Link, Description, Date, Image, Type, Thumbnail
+                HttpUtility.HtmlEncode(Title),
+                Link,
+                HttpUtility.HtmlEncode(Description),
+                HttpUtility.HtmlEncode(Date.ToString("o")), 
+                Image, 
+                Type, 
+                Thumbnail
                 );
         }
     }

@@ -66,30 +66,38 @@ namespace RssImageEncloser.Controllers
             var myAppSettings = ConfigurationManager.GetSection("myAppSettings") as MyAppSettings;
             // login
             var reddit = new Reddit(myAppSettings.Reddit.Name, myAppSettings.Reddit.Password);
-            // get the subreddit
-            var subreddit = reddit.GetSubreddit(subredditName);
-
             // reddit base uri
             Uri redditUri = new Uri("http://www.reddit.com");
 
-            foreach (var post in subreddit.New.Take(50))
+            string[] subreddits = subredditName.Split('+');
+            Subreddit subreddit = null;
+
+            // grab 25 images from each feed
+
+            foreach (var sr in subreddits)
             {
-                // for now, only grab the single images, not the albums from imgur
-                if (post.Domain == "i.imgur.com" && post.Score > 0)
+                // get the subreddit
+                subreddit = reddit.GetSubreddit(sr);
+                
+                foreach (var post in subreddit.New.Take(50))
                 {
-                    string type = ConvertImageType(post.Url);
-                    if (type != null)
+                    // for now, only grab the single images, not the albums from imgur
+                    if (post.Domain == "i.imgur.com" && post.Score > 0)
                     {
-                        items.Add(new RssItem
+                        string type = ConvertImageType(post.Url);
+                        if (type != null)
                         {
-                            Title = post.Title,
-                            Description = post.SelfTextHtml,
-                            Link = new Uri(redditUri, post.Permalink),
-                            Date = post.Created,
-                            Image = post.Url,
-                            Type = type,
-                            Thumbnail = post.Thumbnail
-                        });
+                            items.Add(new RssItem
+                            {
+                                Title = post.Title,
+                                Description = post.SelfTextHtml,
+                                Link = new Uri(redditUri, post.Permalink),
+                                Date = post.Created,
+                                Image = post.Url,
+                                Type = type,
+                                Thumbnail = post.Thumbnail
+                            });
+                        }
                     }
                 }
             }
