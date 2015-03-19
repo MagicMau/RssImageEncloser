@@ -132,6 +132,7 @@
     </Compile>
     <Compile Include="Models\RssItem.cs" />
     <Compile Include="MyAppSettings.cs" />
+    <Compile Include="NoCacheAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

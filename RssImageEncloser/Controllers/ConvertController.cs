@@ -16,6 +16,7 @@ using System.Xml.Xsl;
 
 namespace RssImageEncloser.Controllers
 {
+    [NoCache]
     public class ConvertController : Controller
     {
         private const string xslt = @"<?xml version=""1.0"" encoding=""UTF-8""?><xsl:stylesheet version=""1.0"" xmlns:xsl=""http://www.w3.org/1999/XSL/Transform"" xmlns:fo=""http://www.w3.org/1999/XSL/Format"" xmlns:media=""http://search.yahoo.com/mrss/""><xsl:template match=""@*|node()""><xsl:copy><xsl:apply-templates select=""@*|node()""/></xsl:copy></xsl:template><xsl:template match=""media:content""><enclosure x=""{@fileSize}"" type=""{@type}"" url=""{@url}""></enclosure></xsl:template></xsl:stylesheet>";
