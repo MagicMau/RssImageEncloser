@@ -10,3 +10,4 @@
 *.user
 /RssImageEncloser/Properties/PublishProfiles
 /RssImageEncloser/Settings.config
+/.vs

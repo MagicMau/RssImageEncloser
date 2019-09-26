@@ -1,18 +1,20 @@
-﻿using RedditSharp;
-using RedditSharp.Things;
-using RssImageEncloser.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.Xsl;
+using Newtonsoft.Json.Linq;
+using RedditSharp;
+using RedditSharp.Things;
+using RssImageEncloser.Models;
 
 namespace RssImageEncloser.Controllers
 {
@@ -42,10 +44,10 @@ namespace RssImageEncloser.Controllers
 
         private string Transform(string xml, string xslt)
         {
-            StringWriter sw = new StringWriter();
-            using (XmlReader xrt = XmlReader.Create(new StringReader(xslt)))
-            using (XmlReader xri = XmlReader.Create(new StringReader(xml)))
-            using (XmlWriter xwo = XmlWriter.Create(sw, new XmlWriterSettings { OmitXmlDeclaration = true }))
+            var sw = new StringWriter();
+            using (var xrt = XmlReader.Create(new StringReader(xslt)))
+            using (var xri = XmlReader.Create(new StringReader(xml)))
+            using (var xwo = XmlWriter.Create(sw, new XmlWriterSettings { OmitXmlDeclaration = true }))
             {
                 var xct = new XslCompiledTransform();
                 xct.Load(xrt);
@@ -58,7 +60,7 @@ namespace RssImageEncloser.Controllers
 
         public ActionResult RedditFeed(string subredditName)
         {
-            List<RssItem> items = new List<RssItem>();
+            var items = new List<RssItem>();
 
             // First use Reddit's API to get the last 20 posts in the subreddit
             // RedditSharp: https://github.com/SirCmpwn/RedditSharp
@@ -66,20 +68,22 @@ namespace RssImageEncloser.Controllers
             // get username/password from config
             var myAppSettings = ConfigurationManager.GetSection("myAppSettings") as MyAppSettings;
             // login
+#pragma warning disable CS0618 // Type or member is obsolete
             var reddit = new Reddit(myAppSettings.Reddit.Name, myAppSettings.Reddit.Password);
+#pragma warning restore CS0618 // Type or member is obsolete
             // reddit base uri
-            Uri redditUri = new Uri("http://www.reddit.com");
+            var redditUri = new Uri("http://www.reddit.com");
 
             string[] subreddits = subredditName.Split('+');
             Subreddit subreddit = null;
 
             // grab 25 images from each feed
 
-            foreach (var sr in subreddits)
+            foreach (string sr in subreddits)
             {
                 // get the subreddit
                 subreddit = reddit.GetSubreddit(sr);
-                
+
                 foreach (var post in subreddit.New.Take(50))
                 {
                     // for now, only grab the single images, not the albums from imgur
@@ -103,11 +107,99 @@ namespace RssImageEncloser.Controllers
                 }
             }
 
-            var feed = ToRssFeed(items, subreddit);
+            string feed = ToRssFeed(items, subreddit);
             return Content(feed, "application/rss+xml", System.Text.Encoding.UTF8);
         }
 
-        public string ConvertImageType(Uri url)
+        public async Task<ActionResult> GalPhoto()
+        {
+            // retrieve data from Discord
+            // first, authenticate to get a token
+            var myAppSettings = ConfigurationManager.GetSection("myAppSettings") as MyAppSettings;
+
+            var request = WebRequest.CreateHttp("https://discordapp.com/api/v6/oauth2/token");
+            request.Method = "POST";
+            request.UserAgent = "EliteG19s";
+
+            request.ContentType = "application/x-www-form-urlencoded";
+
+            string encoded = Convert.ToBase64String(Encoding.GetEncoding("ISO-8859-1")
+                .GetBytes(myAppSettings.Discord.ClientId + ":" + myAppSettings.Discord.ClientSecret));
+            request.Headers.Add("Authorization", "Basic " + encoded);
+
+            var data = HttpUtility.ParseQueryString(string.Empty);
+            data["grant_type"] = "client_credentials";
+            data["scope"] = "identify connections messages.read";
+
+            byte[] dataBytes = Encoding.ASCII.GetBytes(data.ToString());
+            request.ContentLength = dataBytes.Length;
+            var dataStream = await request.GetRequestStreamAsync();
+            await dataStream.WriteAsync(dataBytes, 0, dataBytes.Length);
+            dataStream.Close();
+
+            string accessToken = null;
+
+            try
+            {
+                using (var response = (HttpWebResponse)(await request.GetResponseAsync()))
+                {
+                    if (response.StatusCode != HttpStatusCode.OK)
+                    {
+                        return new HttpStatusCodeResult(response.StatusCode, response.StatusDescription);
+                    }
+
+                    string responseBody;
+                    using (var stream = new StreamReader(response.GetResponseStream()))
+                    {
+                        responseBody = await stream.ReadToEndAsync();
+                    }
+
+                    var cc = JObject.Parse(responseBody);
+                    accessToken = cc.Value<string>("access_token");
+                }
+            }
+            catch (WebException e)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, new StreamReader(e.Response.GetResponseStream()).ReadToEnd());
+            }
+
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest, "No access token");
+            }
+
+            // now get messages from channel 338216104310603777 (EliteG19s - General)
+            request = WebRequest.CreateHttp("https://discordapp.com/api/v6/channels/338216104310603777/messages");
+            request.UserAgent = "EliteG19s";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.Headers[HttpRequestHeader.Authorization] = "Bearer " + accessToken;
+
+            using (var response = (HttpWebResponse)(await request.GetResponseAsync()))
+            {
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    return new HttpStatusCodeResult(response.StatusCode, response.StatusDescription);
+                }
+
+                string responseBody;
+                using (var stream = new StreamReader(response.GetResponseStream()))
+                {
+                    responseBody = await stream.ReadToEndAsync();
+                }
+
+                var items = new List<RssItem>();
+
+                var messages = JArray.Parse(responseBody);
+                foreach (var message in messages)
+                {
+
+                }
+            }
+
+            return Content("OK");
+        }
+
+        public static string ConvertImageType(Uri url)
         {
             string path = url.GetLeftPart(UriPartial.Path);
             int lastDot = path.LastIndexOf('.');
@@ -127,7 +219,7 @@ namespace RssImageEncloser.Controllers
 
         public string ToRssFeed(IEnumerable<RssItem> items, Subreddit subreddit)
         {
-            StringBuilder sb = new StringBuilder("<items>");
+            var sb = new StringBuilder("<items>");
             foreach (var item in items)
             {
                 sb.Append(item.ToXml());

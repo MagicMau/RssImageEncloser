@@ -10,7 +10,7 @@ namespace RssImageEncloser.Models
         public string Title { get; set; }
         public string Description { get; set; }
         public Uri Link { get; set; }
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public Uri Image { get; set; }
         public string Type { get; set; }
         public Uri Thumbnail { get; set; }

@@ -24,6 +24,12 @@ namespace RssImageEncloser
                 url: "r/{subredditName}",
                 defaults: new { controller = "Convert", action = "RedditFeed" }
             );
+
+            routes.MapRoute(
+                name: "GalPhoto",
+                url: "galphoto",
+                defaults: new { controller = "Convert", action = "GalPhoto" }
+            );
         }
     }
 }

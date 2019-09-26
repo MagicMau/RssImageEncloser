@@ -1,32 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Web;
+﻿using System.Configuration;
 
 namespace RssImageEncloser
 {
     public class MyAppSettings : ConfigurationSection
     {
         [ConfigurationProperty("reddit")]
-        public RedditConfigElement Reddit {
-            get { return base["reddit"] as RedditConfigElement; }
-        }
+        public RedditConfigElement Reddit => base["reddit"] as RedditConfigElement;
+
+        [ConfigurationProperty("discord")]
+        public DiscordConfigElement Discord => base["discord"] as DiscordConfigElement;
     }
 
     public class RedditConfigElement : ConfigurationElement
     {
         [ConfigurationProperty("name", IsRequired = true)]
-        public string Name
-        {
-            get { return (string)this["name"]; }
-        }
+        public string Name => (string)this["name"];
 
         [ConfigurationProperty("password", IsRequired = true)]
-        public string Password
-        {
-            get { return (string)this["password"]; }
-        }
+        public string Password => (string)this["password"];
+    }
 
+    public class DiscordConfigElement : ConfigurationElement
+    {
+        [ConfigurationProperty("clientId", IsRequired = true)]
+        public string ClientId => (string)this["clientId"];
+
+        [ConfigurationProperty("clientSecret", IsRequired = true)]
+        public string ClientSecret => (string)this["clientSecret"];
     }
 }
