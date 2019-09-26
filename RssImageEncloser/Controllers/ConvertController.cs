@@ -87,7 +87,7 @@ namespace RssImageEncloser.Controllers
                 foreach (var post in subreddit.New.Take(50))
                 {
                     // for now, only grab the single images, not the albums from imgur
-                    if (post.Domain == "i.imgur.com" && post.Score > 0)
+                    if ((post.Domain == "i.imgur.com" || post.Domain == "i.redd.it") && post.Score > 0)
                     {
                         string type = ConvertImageType(post.Url);
                         if (type != null)
